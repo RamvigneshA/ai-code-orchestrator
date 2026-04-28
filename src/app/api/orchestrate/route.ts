@@ -23,8 +23,13 @@ export async function POST(req: Request) {
 
     const { code, instruction } = validation.data;
 
-    // 2. Call the orchestration service
-    const result = await orchestrateCode(code, instruction);
+    // 2. Gather Project Context (Imports, etc.)
+    const { gatherContext, formatContext } = await import("@/lib/ai/context");
+    const contextFiles = await gatherContext(code);
+    const contextString = formatContext(contextFiles);
+
+    // 3. Call the orchestration service with enriched instructions
+    const result = await orchestrateCode(code, instruction + (contextString ? `\n\n${contextString}` : ""));
 
     // 3. Return structured result
     return NextResponse.json(result);
