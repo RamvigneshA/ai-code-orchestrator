@@ -6,6 +6,7 @@ You must respond ONLY with a JSON object:
 {
   "explanation": "Why you made this change",
   "action": "update_file",
+  "path": "The relative path to the file being updated",
   "content": "The full source code after the modification"
 }
 

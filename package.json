@@ -9,9 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.41.1",
+    "@openrouter/agent": "^0.4.0",
+    "@openrouter/sdk": "^0.12.21",
     "next": "16.2.4",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
