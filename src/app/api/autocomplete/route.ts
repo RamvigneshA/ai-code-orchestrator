@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const AutocompleteSchema = z.object({
-  prefix: z.string(), // Code before the cursor
+  prefix: z.string(),
 });
 
 export async function POST(req: Request) {
   try {
     const { prefix } = AutocompleteSchema.parse(await req.json());
 
-    // Call OpenRouter with a specific "Completion" prompt
+    // Call OpenRouter with streaming enabled
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -18,15 +18,16 @@ export async function POST(req: Request) {
         "HTTP-Referer": "http://localhost:3000",
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-haiku", // Haiku is perfect for fast completions
+        model: "anthropic/claude-3-haiku",
+        stream: true, // ENABLE STREAMING
         messages: [
           {
             role: "system",
-            content: "You are a code completion engine. Your task is to provide the continuation of the code provided in the user's prompt. ONLY return the continuation text. Do not include markdown code blocks, explanations, or formatting. Your output will be directly inserted at the cursor position."
+            content: "You are a code completion engine. Continue the code. ONLY return the continuation. No markdown. No explanations."
           },
           {
             role: "user",
-            content: `Complete this code:\n\n${prefix}`
+            content: prefix
           }
         ],
         max_tokens: 50,
@@ -34,10 +35,49 @@ export async function POST(req: Request) {
       }),
     });
 
-    const data = await response.json();
-    const suggestion = data.choices?.[0]?.message?.content || "";
+    // Create a readable stream to forward the OpenRouter stream
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
 
-    return NextResponse.json({ suggestion });
+        const decoder = new TextDecoder();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    controller.enqueue(content);
+                  }
+                } catch (e) {
+                  // Ignore malformed JSON chunks
+                }
+              }
+            }
+          }
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
 
   } catch (error) {
     return NextResponse.json({ suggestion: "" }, { status: 500 });

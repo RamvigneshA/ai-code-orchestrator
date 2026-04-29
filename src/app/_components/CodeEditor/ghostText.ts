@@ -27,6 +27,7 @@ class GhostWidget extends WidgetType {
     span.style.fontStyle = "italic";
     span.style.pointerEvents = "none";
     span.style.userSelect = "none";
+    span.style.whiteSpace = "pre-wrap"; // Support multi-line
     span.textContent = this.text;
     return span;
   }
@@ -79,13 +80,40 @@ export const acceptGhostText = (view: EditorView) => {
   return true;
 };
 
+export const acceptNextWord = (view: EditorView) => {
+  let ghost = view.state.field(ghostTextField);
+  if (!ghost) return false;
+
+  // Find the next word boundary (space, newline, or punctuation)
+  const match = ghost.match(/^(\s*\w+|\s*\W)/);
+  if (!match) return acceptGhostText(view);
+
+  const word = match[0];
+  const remaining = ghost.slice(word.length);
+  const pos = view.state.selection.main.head;
+
+  view.dispatch({
+    changes: { from: pos, insert: word },
+    selection: { anchor: pos + word.length },
+    effects: setGhostText.of(remaining || null),
+    annotations: Transaction.userEvent.of("ai")
+  });
+  return true;
+};
+
 // --- Combined Extension ---
 
 export const ghostTextExtension = [
   ghostTextField,
   ghostTextPlugin,
-  keymap.of([{
-    key: "Tab",
-    run: acceptGhostText
-  }])
+  keymap.of([
+    {
+      key: "Tab",
+      run: acceptGhostText
+    },
+    {
+      key: "ArrowRight",
+      run: acceptNextWord
+    }
+  ])
 ];
