@@ -9,6 +9,7 @@ import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } 
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { javascript } from '@codemirror/lang-javascript';
+import { ghostTextExtension } from './CodeEditor/ghostText';
 
 const modularSetup = [
   lineNumbers(),
@@ -28,6 +29,7 @@ const modularSetup = [
   crosshairCursor(),
   highlightSelectionMatches(),
   javascript(),
+  ghostTextExtension,
   keymap.of([
     ...closeBracketsKeymap,
     ...standardKeymap,
@@ -43,9 +45,12 @@ interface CodeEditorProps {
   onChange: (value: string) => void;
 }
 
+import { setGhostText } from './CodeEditor/ghostText';
+
 export function CodeEditor({ value, onChange }: CodeEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -61,6 +66,33 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
             const isAI = update.transactions.some(tr => tr.isUserEvent('ai'));
             if (!isAI) {
               onChange(update.state.doc.toString());
+              
+              // Trigger Autocomplete logic
+              if (timerRef.current) clearTimeout(timerRef.current);
+              timerRef.current = setTimeout(async () => {
+                const view = viewRef.current;
+                if (!view) return;
+
+                const pos = view.state.selection.main.head;
+                const prefix = view.state.doc.sliceString(0, pos);
+                
+                try {
+                  const res = await fetch("/api/autocomplete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prefix }),
+                  });
+                  const { suggestion } = await res.json();
+                  
+                  if (suggestion && viewRef.current) {
+                    viewRef.current.dispatch({
+                      effects: setGhostText.of(suggestion)
+                    });
+                  }
+                } catch (e) {
+                  console.error("Autocomplete failed", e);
+                }
+              }, 1000); // 1 second pause
             }
           }
         })
