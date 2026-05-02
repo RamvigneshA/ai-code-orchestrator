@@ -1,46 +1,55 @@
-import { ORCHESTRATOR_SYSTEM_PROMPT } from './prompts';
+import { FILE_ORCHESTRATOR_PROMPT } from './prompts';
+import { VFSState } from '../types/vfs';
 
-export interface OrchestrationResult {
-  content: string;
+export interface VFSAction {
+  type: 'WRITE_FILE' | 'DELETE_FILE';
   path: string;
+  content?: string;
+}
+
+export interface MultiFileOrchestrationResult {
   explanation: string;
+  project_structure: string[];
+  actions: VFSAction[];
   reasoning_details?: string;
   usage?: {
     total_tokens: number;
     completion_tokens: number;
     prompt_tokens: number;
     reasoning_tokens?: number;
-    completion_tokens_details?: {
-      reasoning_tokens?: number;
-    };
   };
 }
 
-export async function orchestrateCode(code: string, instruction: string): Promise<OrchestrationResult> {
+export async function orchestrateVFS(files: VFSState, instruction: string): Promise<MultiFileOrchestrationResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY is not configured');
   }
 
+  // Format the current VFS for the AI
+  const vfsSnapshot = Object.entries(files).map(([path, file]) => {
+    return `File: ${path}\nContent:\n${file.content}\n---`;
+  }).join('\n');
+
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3000", // Optional, for rankings
-      "X-OpenRouter-Title": "AI Code Orchestrator", // Optional, for rankings
+      "HTTP-Referer": "http://localhost:3000",
+      "X-OpenRouter-Title": "AI Code Orchestrator",
     },
     body: JSON.stringify({
       "model": "openai/gpt-oss-120b:free",
       "messages": [
         {
           "role": "system",
-          "content": ORCHESTRATOR_SYSTEM_PROMPT
+          "content": FILE_ORCHESTRATOR_PROMPT
         },
         {
           "role": "user",
-          "content": `Current Code:\n${code}\n\nInstruction: ${instruction}`
+          "content": `Current Project State:\n${vfsSnapshot}\n\nUser Instruction: ${instruction}`
         }
       ],
       "include_reasoning": true,
@@ -54,9 +63,8 @@ export async function orchestrateCode(code: string, instruction: string): Promis
   }
 
   const data = await response.json();
-  console.log('OpenRouter API response:', data);
   const choice = data.choices?.[0];
-  console.log('Choice:', choice);
+  
   if (!choice || !choice.message?.content) {
     throw new Error('No response from AI model');
   }

@@ -19,19 +19,20 @@ export default function Home() {
     "src/index.css": {
         path: "src/index.css",
         content: "body {\n  margin: 0;\n  background: #0d0d0d;\n  color: white;\n}"
-    },   "src/fol.tsx/subfol.tsx": { 
-        path: "src/App.tsx", 
-        content: "export default function App() {\n  return (\n    <div className=\"min-h-screen bg-slate-900 text-white p-8\">\n      <h1 className=\"text-4xl font-bold\">Hello VFS</h1>\n      <p className=\"mt-4 text-slate-400\">The Lead AI Orchestrator is now online.</p>\n    </div>\n  )\n}" 
     },
   });
 
   const [activeFile, setActiveFile] = useState("src/App.tsx");
 
+  // Ensure activeFile exists in VFS, fallback to App.tsx or first available
+  const currentFile = files[activeFile] || files["src/App.tsx"] || Object.values(files)[0];
+
   // Helper to update active file code
   const updateActiveFileContent = (content: string) => {
+    if (!currentFile) return;
     setFiles(prev => ({
       ...prev,
-      [activeFile]: { ...prev[activeFile], content }
+      [currentFile.path]: { ...prev[currentFile.path], content }
     }));
   };
 
@@ -44,7 +45,7 @@ export default function Home() {
     runOrchestrator,
     applyChanges,
     discardChanges
-  } = useOrchestrator(files[activeFile].content, updateActiveFileContent);
+  } = useOrchestrator(files, setFiles);
 
   return (
     <main className="flex h-screen w-screen bg-[#0d0d0d] text-slate-300 overflow-hidden font-sans">
@@ -57,9 +58,15 @@ export default function Home() {
 
       {/* 2. Main Content - Code Editor */}
       <section className="flex-1 flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
-        <EditorHeader fileName={activeFile} charCount={files[activeFile].content.length} />
+        <EditorHeader fileName={currentFile?.path || "No file selected"} charCount={currentFile?.content.length || 0} />
         <div className="flex-1 overflow-hidden">
-          <CodeEditor value={files[activeFile].content} onChange={updateActiveFileContent} />
+          {currentFile ? (
+            <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-slate-500">
+              Select a file to start editing
+            </div>
+          )}
         </div>
       </section>
 
