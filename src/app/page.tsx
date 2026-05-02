@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CodeEditor, AIPanel, SuggestionCard, EditorHeader } from "@/app/_components";
+import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer } from "@/app/_components";
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
 
 import { VFSState } from "@/lib/types/vfs";
@@ -19,7 +19,10 @@ export default function Home() {
     "src/index.css": {
         path: "src/index.css",
         content: "body {\n  margin: 0;\n  background: #0d0d0d;\n  color: white;\n}"
-    }
+    },   "src/fol.tsx/subfol.tsx": { 
+        path: "src/App.tsx", 
+        content: "export default function App() {\n  return (\n    <div className=\"min-h-screen bg-slate-900 text-white p-8\">\n      <h1 className=\"text-4xl font-bold\">Hello VFS</h1>\n      <p className=\"mt-4 text-slate-400\">The Lead AI Orchestrator is now online.</p>\n    </div>\n  )\n}" 
+    },
   });
 
   const [activeFile, setActiveFile] = useState("src/App.tsx");
@@ -45,8 +48,23 @@ export default function Home() {
 
   return (
     <main className="flex h-screen w-screen bg-[#0d0d0d] text-slate-300 overflow-hidden font-sans">
-      {/* Sidebar - AI Panel */}
-      <aside className="w-80 border-r border-slate-800 flex flex-col bg-[#111111]">
+      {/* 1. File Explorer */}
+      <FileExplorer 
+        files={files} 
+        activeFile={activeFile} 
+        onFileSelect={setActiveFile} 
+      />
+
+      {/* 2. Main Content - Code Editor */}
+      <section className="flex-1 flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
+        <EditorHeader fileName={activeFile} charCount={files[activeFile].content.length} />
+        <div className="flex-1 overflow-hidden">
+          <CodeEditor value={files[activeFile].content} onChange={updateActiveFileContent} />
+        </div>
+      </section>
+
+      {/* 3. Sidebar - AI Panel */}
+      <aside className="w-80 flex flex-col bg-[#111111]">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <h1 className="text-[10px] font-bold tracking-widest uppercase text-slate-500">AI Panel</h1>
           <div className={`h-2 w-2 rounded-full ${loading ? 'bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-slate-700'}`} />
@@ -73,14 +91,6 @@ export default function Home() {
           />
         </div>
       </aside>
-
-      {/* Main Content - Code Editor */}
-      <section className="flex-1 flex flex-col relative bg-[#0d0d0d]">
-        <EditorHeader fileName={activeFile} charCount={files[activeFile].content.length} />
-        <div className="flex-1 overflow-hidden">
-          <CodeEditor value={files[activeFile].content} onChange={updateActiveFileContent} />
-        </div>
-      </section>
     </main>
   );
 }
