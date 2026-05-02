@@ -47,6 +47,8 @@ export default function Home() {
     discardChanges
   } = useOrchestrator(files, setFiles);
 
+  const pendingPaths = orchestration?.actions?.map(a => a.path) || [];
+
   return (
     <main className="flex h-screen w-screen bg-[#0d0d0d] text-slate-300 overflow-hidden font-sans">
       {/* 1. File Explorer */}
@@ -54,6 +56,7 @@ export default function Home() {
         files={files} 
         activeFile={activeFile} 
         onFileSelect={setActiveFile} 
+        highlightedPaths={pendingPaths}
       />
 
       {/* 2. Main Content - Code Editor */}
