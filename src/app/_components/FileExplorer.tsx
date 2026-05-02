@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ChevronDown, FileCode, Folder, FolderOpen } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { TreeNode, buildFileTree } from "@/lib/utils/file-tree";
 import { VFSState } from "@/lib/types/vfs";
 import { cn } from "@/lib/utils";
+import { getFileIconUrl, getFolderIconUrl } from "@/lib/utils/icons";
 
 interface FileExplorerProps {
   files: VFSState;
@@ -61,7 +62,14 @@ function TreeItem({
         )}
       >
         <div className="flex items-center gap-2 truncate">
-          <FileCode size={14} className={isSelected ? "text-indigo-400" : "text-slate-500"} />
+          <img 
+            src={getFileIconUrl(node.name)} 
+            alt="" 
+            className="w-4 h-4" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://raw.githubusercontent.com/vscode-icons/vscode-icons/master/icons/default_file.svg';
+            }}
+          />
           <span className="truncate">{node.name}</span>
         </div>
         
@@ -80,8 +88,17 @@ function TreeItem({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition-colors text-xs font-medium"
       >
-        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        {isOpen ? <FolderOpen size={14} className="text-indigo-400/70" /> : <Folder size={14} className="text-slate-500" />}
+        <div className="flex items-center gap-1">
+          {isOpen ? <ChevronDown size={14} className="text-slate-600" /> : <ChevronRight size={14} className="text-slate-600" />}
+          <img 
+            src={getFolderIconUrl(node.name, isOpen)} 
+            alt="" 
+            className="w-4 h-4"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = isOpen ? 'https://raw.githubusercontent.com/vscode-icons/vscode-icons/master/icons/default_folder_opened.svg' : 'https://raw.githubusercontent.com/vscode-icons/vscode-icons/master/icons/default_folder.svg';
+            }}
+          />
+        </div>
         <span>{node.name}</span>
       </div>
       {isOpen && (
