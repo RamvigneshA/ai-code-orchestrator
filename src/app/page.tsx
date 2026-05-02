@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer } from "@/app/_components";
+import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor } from "@/app/_components";
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
+import { useMemo } from "react";
 
 import { VFSState } from "@/lib/types/vfs";
 
@@ -48,6 +49,13 @@ export default function Home() {
   } = useOrchestrator(files, setFiles);
 
   const pendingPaths = orchestration?.actions?.map(a => a.path) || [];
+  
+  const proposedContent = useMemo(() => {
+    const action = orchestration?.actions?.find(a => a.path === activeFile);
+    if (action?.type === 'WRITE_FILE') return action.content;
+    if (action?.type === 'DELETE_FILE') return "";
+    return null;
+  }, [orchestration, activeFile]);
 
   return (
     <main className="flex h-screen w-screen bg-[#0d0d0d] text-slate-300 overflow-hidden font-sans">
@@ -63,7 +71,12 @@ export default function Home() {
       <section className="flex-1 flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
         <EditorHeader fileName={currentFile?.path || "No file selected"} charCount={currentFile?.content.length || 0} />
         <div className="flex-1 overflow-hidden">
-          {currentFile ? (
+          {proposedContent !== null ? (
+            <DiffEditor 
+              originalContent={files[activeFile]?.content || ""} 
+              modifiedContent={proposedContent || ""} 
+            />
+          ) : currentFile ? (
             <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} />
           ) : (
             <div className="flex items-center justify-center h-full text-slate-500">
