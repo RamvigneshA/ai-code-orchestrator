@@ -4,8 +4,34 @@ import { useState } from "react";
 import { CodeEditor, AIPanel, SuggestionCard, EditorHeader } from "@/app/_components";
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
 
+import { VFSState } from "@/lib/types/vfs";
+
 export default function Home() {
-  const [code, setCode] = useState("const x = 100; console.log(x);");
+  const [files, setFiles] = useState<VFSState>({
+    "src/App.tsx": { 
+        path: "src/App.tsx", 
+        content: "export default function App() {\n  return (\n    <div className=\"min-h-screen bg-slate-900 text-white p-8\">\n      <h1 className=\"text-4xl font-bold\">Hello VFS</h1>\n      <p className=\"mt-4 text-slate-400\">The Lead AI Orchestrator is now online.</p>\n    </div>\n  )\n}" 
+    },
+    "package.json": { 
+        path: "package.json", 
+        content: '{\n  "name": "polaris-vfs",\n  "dependencies": {\n    "react": "^18.2.0",\n    "lucide-react": "latest"\n  }\n}' 
+    },
+    "src/index.css": {
+        path: "src/index.css",
+        content: "body {\n  margin: 0;\n  background: #0d0d0d;\n  color: white;\n}"
+    }
+  });
+
+  const [activeFile, setActiveFile] = useState("src/App.tsx");
+
+  // Helper to update active file code
+  const updateActiveFileContent = (content: string) => {
+    setFiles(prev => ({
+      ...prev,
+      [activeFile]: { ...prev[activeFile], content }
+    }));
+  };
+
   const {
     instruction,
     setInstruction,
@@ -15,7 +41,7 @@ export default function Home() {
     runOrchestrator,
     applyChanges,
     discardChanges
-  } = useOrchestrator(code, setCode);
+  } = useOrchestrator(files[activeFile].content, updateActiveFileContent);
 
   return (
     <main className="flex h-screen w-screen bg-[#0d0d0d] text-slate-300 overflow-hidden font-sans">
@@ -50,9 +76,9 @@ export default function Home() {
 
       {/* Main Content - Code Editor */}
       <section className="flex-1 flex flex-col relative bg-[#0d0d0d]">
-        <EditorHeader fileName="main.js" charCount={code.length} />
+        <EditorHeader fileName={activeFile} charCount={files[activeFile].content.length} />
         <div className="flex-1 overflow-hidden">
-          <CodeEditor value={code} onChange={setCode} />
+          <CodeEditor value={files[activeFile].content} onChange={updateActiveFileContent} />
         </div>
       </section>
     </main>
