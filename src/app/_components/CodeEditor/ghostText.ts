@@ -101,12 +101,28 @@ export const acceptNextWord = (view: EditorView) => {
   return true;
 };
 
+// --- Dismiss Ghost Text ---
+
+export const dismissGhostText = (view: EditorView) => {
+  let ghost = view.state.field(ghostTextField);
+  if (!ghost) return false;
+
+  view.dispatch({
+    effects: setGhostText.of(null),
+  });
+  return true;
+};
+
 // --- Combined Extension ---
 
 export const ghostTextExtension = [
   ghostTextField,
   ghostTextPlugin,
   keymap.of([
+    {
+      key: "Escape",
+      run: dismissGhostText
+    },
     {
       key: "Tab",
       run: acceptGhostText

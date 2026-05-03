@@ -47,7 +47,7 @@ interface CodeEditorProps {
   fileName?: string;
 }
 
-import { setGhostText } from './CodeEditor/ghostText';
+import { setGhostText, dismissGhostText } from './CodeEditor/ghostText';
 
 export function CodeEditor({ value, onChange, fileName = "file.js" }: CodeEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -63,6 +63,24 @@ export function CodeEditor({ value, onChange, fileName = "file.js" }: CodeEditor
       extensions: [
         ...modularSetup(fileName),
         oneDark,
+        // Escape key: abort in-flight AI request + clear ghost text + cancel pending timer
+        keymap.of([{
+          key: "Escape",
+          run: (view) => {
+            // Abort any in-flight autocomplete fetch
+            if (abortControllerRef.current) {
+              abortControllerRef.current.abort();
+              abortControllerRef.current = null;
+            }
+            // Cancel any pending debounced request
+            if (timerRef.current) {
+              clearTimeout(timerRef.current);
+              timerRef.current = null;
+            }
+            // Dismiss ghost text via the extension
+            return dismissGhostText(view);
+          }
+        }]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             // Cancel any pending AI request immediately
@@ -78,7 +96,7 @@ export function CodeEditor({ value, onChange, fileName = "file.js" }: CodeEditor
               // Clear ghost text if user is typing
               update.view.dispatch({ effects: setGhostText.of(null) });
 
-              // Debounced trigger
+              // Debounced trigger — wait 1.5s of inactivity before requesting AI suggestion
               if (timerRef.current) clearTimeout(timerRef.current);
               timerRef.current = setTimeout(async () => {
                 const view = viewRef.current;
@@ -125,7 +143,7 @@ export function CodeEditor({ value, onChange, fileName = "file.js" }: CodeEditor
                     abortControllerRef.current = null;
                   }
                 }
-              }, 800);
+              }, 1500);
             }
           }
         })
