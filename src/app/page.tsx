@@ -70,12 +70,89 @@ export default function Home() {
     });
   };
 
-  const handleFileCreate = (path: string) => {
+  const handleFileCreate = (path: string, type: 'file' | 'folder' = 'file') => {
+    if (type === 'folder') {
+      const keepPath = `${path}/.keep`;
+      setFiles(prev => ({
+        ...prev,
+        [keepPath]: { path: keepPath, content: "" }
+      }));
+    } else {
+      setFiles(prev => ({
+        ...prev,
+        [path]: { path, content: "" }
+      }));
+      handleFileSelect(path);
+    }
+  };
+
+  const handleFileRename = (oldPath: string, newPath: string, isFolder: boolean) => {
+    setFiles(prev => {
+      const next = { ...prev };
+      if (isFolder) {
+        Object.keys(next).forEach(key => {
+          if (key === oldPath || key.startsWith(`${oldPath}/`)) {
+            const updatedPath = key.replace(oldPath, newPath);
+            next[updatedPath] = { ...next[key], path: updatedPath };
+            delete next[key];
+          }
+        });
+      } else {
+        if (next[oldPath]) {
+          next[newPath] = { ...next[oldPath], path: newPath };
+          delete next[oldPath];
+        }
+      }
+      return next;
+    });
+
+    setOpenFiles(prev => prev.map(p => {
+      if (isFolder && (p === oldPath || p.startsWith(`${oldPath}/`))) return p.replace(oldPath, newPath);
+      if (!isFolder && p === oldPath) return newPath;
+      return p;
+    }));
+
+    if (isFolder && (activeFile === oldPath || activeFile.startsWith(`${oldPath}/`))) {
+      setActiveFile(activeFile.replace(oldPath, newPath));
+    } else if (!isFolder && activeFile === oldPath) {
+      setActiveFile(newPath);
+    }
+  };
+
+  const handleFileDelete = (path: string, isFolder: boolean) => {
+    setFiles(prev => {
+      const next = { ...prev };
+      if (isFolder) {
+        Object.keys(next).forEach(key => {
+          if (key === path || key.startsWith(`${path}/`)) delete next[key];
+        });
+      } else {
+        delete next[path];
+      }
+      return next;
+    });
+
+    setOpenFiles(prev => {
+      const next = prev.filter(p => isFolder ? !(p === path || p.startsWith(`${path}/`)) : p !== path);
+      if ((isFolder && (activeFile === path || activeFile.startsWith(`${path}/`))) || (!isFolder && activeFile === path)) {
+        setActiveFile(next.length > 0 ? next[next.length - 1] : "");
+      }
+      return next;
+    });
+  };
+
+  const handleFileDuplicate = (path: string) => {
+    const file = files[path];
+    if (!file) return;
+
+    const lastDotIndex = path.lastIndexOf('.');
+    const newPath = lastDotIndex === -1 ? `${path}_copy` : `${path.substring(0, lastDotIndex)}_copy${path.substring(lastDotIndex)}`;
+
     setFiles(prev => ({
       ...prev,
-      [path]: { path, content: "" }
+      [newPath]: { path: newPath, content: file.content }
     }));
-    handleFileSelect(path);
+    handleFileSelect(newPath);
   };
 
   const updateActiveFileContent = (content: string) => {
@@ -131,6 +208,9 @@ export default function Home() {
             activeFile={activeFile} 
             onFileSelect={handleFileSelect} 
             onFileCreate={handleFileCreate}
+            onFileRename={handleFileRename}
+            onFileDelete={handleFileDelete}
+            onFileDuplicate={handleFileDuplicate}
             highlightedPaths={pendingPaths}
           />
         </Panel>
