@@ -18,7 +18,7 @@ export function FileExplorer({ files, activeFile, onFileSelect, highlightedPaths
   const tree = buildFileTree(files);
 
   return (
-    <div className="w-64 border-r border-slate-800 bg-slate-950 flex flex-col">
+    <div className="flex-1 border-r border-slate-800 bg-slate-950 flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/30">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Explorer</span>
       </div>
