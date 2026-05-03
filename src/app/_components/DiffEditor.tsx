@@ -64,7 +64,7 @@ export function DiffEditor({ originalContent, modifiedContent, fileName = "file.
         extensions: getCommonExtensions(fileName),
       },
       parent: containerRef.current,
-      orientation: "horizontal"
+      orientation: "a-b"
     });
 
     mergeViewRef.current = mergeView;

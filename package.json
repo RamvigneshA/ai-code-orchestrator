@@ -24,6 +24,7 @@
     "@codemirror/view": "^6.41.1",
     "@openrouter/agent": "^0.4.0",
     "@openrouter/sdk": "^0.12.21",
+    "@webcontainer/api": "^1.6.4",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
@@ -32,6 +33,8 @@
     "react-resizable-panels": "^2.0.22",
     "tailwind-merge": "^3.5.0",
     "vscode-icons-js": "^11.6.1",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

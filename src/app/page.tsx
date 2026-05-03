@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor, TabBar } from "@/app/_components";
+import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor, TabBar, Terminal as TerminalView, BrowserPreview } from "@/app/_components";
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
 import { Terminal, Cpu, Sparkles, Command } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { writeToWebContainer, startVFSSync } from "@/lib/utils/webcontainer";
 
 import { VFSState } from "@/lib/types/vfs";
 
@@ -15,7 +16,7 @@ const INITIAL_VFS: VFSState = {
   },
   "package.json": { 
       path: "package.json", 
-      content: '{\n  "name": "polaris-vfs",\n  "version": "1.0.0",\n  "dependencies": {\n    "react": "^18.2.0",\n    "lucide-react": "latest",\n    "clsx": "latest",\n    "tailwind-merge": "latest"\n  }\n}' 
+      content: "{\n  \"name\": \"polaris-vfs\",\n  \"version\": \"1.0.0\",\n  \"type\": \"module\",\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"lucide-react\": \"latest\",\n    \"clsx\": \"latest\",\n    \"tailwind-merge\": \"latest\"\n  }\n}" 
   },
   "src/index.css": {
       path: "src/index.css",
@@ -46,8 +47,15 @@ export default function Home() {
       localStorage.setItem("polaris_vfs_files", JSON.stringify(files));
       localStorage.setItem("polaris_active_file", activeFile);
       localStorage.setItem("polaris_open_files", JSON.stringify(openFiles));
+      writeToWebContainer(files);
     }
   }, [files, activeFile, openFiles, isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      startVFSSync(setFiles);
+    }
+  }, [isMounted]);
 
   const currentFile = files[activeFile];
 
@@ -219,44 +227,71 @@ export default function Home() {
           <div className="absolute inset-y-0 left-1/2 w-px bg-slate-800 -translate-x-1/2" />
         </PanelResizeHandle>
 
-        {/* 2. Main Content - Code Editor */}
+        {/* 2. Main Content - Code Editor & Terminal */}
         <Panel defaultSize={55} minSize={30}>
-          <section className="flex-1 h-full flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
-            <EditorHeader fileName={currentFile?.path || "Welcome"} charCount={currentFile?.content.length || 0} />
-            <TabBar 
-              openFiles={openFiles} 
-              activeFile={activeFile} 
-              onFileSelect={handleFileSelect} 
-              onFileClose={handleFileClose} 
-            />
-            <div className="flex-1 overflow-hidden relative">
-              {proposedContent !== null ? (
-                <DiffEditor 
-                  originalContent={files[activeFile]?.content || ""} 
-                  modifiedContent={proposedContent || ""} 
-                  fileName={activeFile}
-                />
-              ) : currentFile ? (
-                <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} fileName={activeFile} />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full space-y-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/5 via-transparent to-transparent">
-                  <div className="relative">
-                    <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
-                    <div className="relative h-20 w-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-2xl">
-                       <Cpu size={32} className="text-indigo-400" />
+          <PanelGroup direction="vertical">
+            <Panel defaultSize={70} minSize={30}>
+              <PanelGroup direction="horizontal">
+                {/* Code Editor */}
+                <Panel defaultSize={55} minSize={30}>
+                  <section className="flex-1 h-full flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
+                    <EditorHeader fileName={currentFile?.path || "Welcome"} charCount={currentFile?.content.length || 0} />
+                    <TabBar 
+                      openFiles={openFiles} 
+                      activeFile={activeFile} 
+                      onFileSelect={handleFileSelect} 
+                      onFileClose={handleFileClose} 
+                    />
+                    <div className="flex-1 overflow-hidden relative">
+                      {proposedContent !== null ? (
+                        <DiffEditor 
+                          originalContent={files[activeFile]?.content || ""} 
+                          modifiedContent={proposedContent || ""} 
+                          fileName={activeFile}
+                        />
+                      ) : currentFile ? (
+                        <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} fileName={activeFile} />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full space-y-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/5 via-transparent to-transparent">
+                          <div className="relative">
+                            <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" />
+                            <div className="relative h-20 w-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-2xl">
+                               <Cpu size={32} className="text-indigo-400" />
+                            </div>
+                          </div>
+                          <div className="text-center space-y-2 max-w-sm px-4">
+                            <h2 className="text-xl font-bold text-white">Polaris Orchestrator</h2>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                              Select a file from the explorer or ask the AI to generate a new component to get started.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-center space-y-2 max-w-sm px-4">
-                    <h2 className="text-xl font-bold text-white">Polaris Orchestrator</h2>
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      Select a file from the explorer or ask the AI to generate a new component to get started.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
+                  </section>
+                </Panel>
+
+                <PanelResizeHandle className="w-1 bg-slate-900 hover:bg-indigo-500/30 transition-colors cursor-col-resize relative">
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-slate-800 -translate-x-1/2" />
+                </PanelResizeHandle>
+
+                {/* Browser Preview */}
+                <Panel defaultSize={45} minSize={20} collapsible>
+                  <BrowserPreview />
+                </Panel>
+              </PanelGroup>
+            </Panel>
+
+            <PanelResizeHandle className="h-1 bg-slate-900 hover:bg-indigo-500/30 transition-colors cursor-row-resize relative">
+              <div className="absolute inset-x-0 top-1/2 h-px bg-slate-800 -translate-y-1/2" />
+            </PanelResizeHandle>
+
+            <Panel defaultSize={30} minSize={10} collapsible>
+              <TerminalView />
+            </Panel>
+          </PanelGroup>
         </Panel>
+
 
         <PanelResizeHandle className="w-1 bg-slate-900 hover:bg-indigo-500/30 transition-colors cursor-col-resize relative">
           <div className="absolute inset-y-0 left-1/2 w-px bg-slate-800 -translate-x-1/2" />

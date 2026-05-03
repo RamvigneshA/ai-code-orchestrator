@@ -5,3 +5,5 @@ export * from './EditorHeader';
 export * from './FileExplorer';
 export * from './DiffEditor';
 export * from './TabBar';
+export * from './Terminal';
+export * from './BrowserPreview';

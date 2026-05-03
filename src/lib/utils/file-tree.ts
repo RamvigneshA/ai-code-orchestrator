@@ -18,6 +18,9 @@ export function buildFileTree(files: VFSState): TreeNode[] {
       const isFile = index === parts.length - 1;
       const currentPath = parts.slice(0, index + 1).join("/");
       
+      // Do not render our internal .keep marker files in the UI
+      if (isFile && part === ".keep") return;
+
       let existingNode = currentLevel.find((v) => v.name === part);
 
       if (!existingNode) {

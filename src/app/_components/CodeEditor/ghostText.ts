@@ -11,7 +11,7 @@ export const ghostTextField = StateField.define<string | null>({
   update(value, tr) {
     for (let e of tr.effects) if (e.is(setGhostText)) return e.value;
     // Clear ghost text on any document change that isn't from the AI
-    if (tr.docChanged && !tr.annotation(Transaction.userEvent.of("ai"))) return null;
+    if (tr.docChanged && tr.annotation(Transaction.userEvent) !== "ai") return null;
     return value;
   }
 });
