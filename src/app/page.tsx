@@ -313,6 +313,7 @@ export default function Home() {
                 setInstruction={setInstruction} 
                 loading={loading} 
                 runOrchestrator={runOrchestrator} 
+                files={files}
               />
               {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[11px] text-red-400">
