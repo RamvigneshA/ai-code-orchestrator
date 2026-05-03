@@ -10,8 +10,9 @@ import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { javascript } from '@codemirror/lang-javascript';
 import { ghostTextExtension } from './CodeEditor/ghostText';
+import { getLanguageExtension } from '@/lib/utils/languages';
 
-const modularSetup = [
+const modularSetup = (fileName: string) => [
   lineNumbers(),
   highlightActiveLineGutter(),
   highlightSpecialChars(),
@@ -28,7 +29,7 @@ const modularSetup = [
   rectangularSelection(),
   crosshairCursor(),
   highlightSelectionMatches(),
-  javascript(),
+  getLanguageExtension(fileName),
   ghostTextExtension,
   keymap.of([
     ...closeBracketsKeymap,
@@ -43,11 +44,12 @@ const modularSetup = [
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
+  fileName?: string;
 }
 
 import { setGhostText } from './CodeEditor/ghostText';
 
-export function CodeEditor({ value, onChange }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, fileName = "file.js" }: CodeEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,8 +61,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
     const state = EditorState.create({
       doc: value,
       extensions: [
-        ...modularSetup,
-        javascript(),
+        ...modularSetup(fileName),
         oneDark,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -137,7 +138,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
     });
     viewRef.current = view;
     return () => view.destroy();
-  }, []);
+  }, [fileName]);
 
   useEffect(() => {
     const view = viewRef.current;

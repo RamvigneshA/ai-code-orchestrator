@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor } from "@/app/_components";
+import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor, TabBar } from "@/app/_components";
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
 import { Terminal, Cpu, Sparkles, Command } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -26,13 +26,18 @@ const INITIAL_VFS: VFSState = {
 export default function Home() {
   const [files, setFiles] = useState<VFSState>(INITIAL_VFS);
   const [activeFile, setActiveFile] = useState("src/App.tsx");
+  const [openFiles, setOpenFiles] = useState<string[]>(["src/App.tsx"]);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const savedFiles = localStorage.getItem("polaris_vfs_files");
     const savedActiveFile = localStorage.getItem("polaris_active_file");
+    const savedOpenFiles = localStorage.getItem("polaris_open_files");
+    
     if (savedFiles) { try { setFiles(JSON.parse(savedFiles)); } catch (e) { console.error(e); } }
     if (savedActiveFile) { setActiveFile(savedActiveFile); }
+    if (savedOpenFiles) { try { setOpenFiles(JSON.parse(savedOpenFiles)); } catch (e) { console.error(e); } }
+    
     setIsMounted(true);
   }, []);
 
@@ -40,10 +45,38 @@ export default function Home() {
     if (isMounted) {
       localStorage.setItem("polaris_vfs_files", JSON.stringify(files));
       localStorage.setItem("polaris_active_file", activeFile);
+      localStorage.setItem("polaris_open_files", JSON.stringify(openFiles));
     }
-  }, [files, activeFile, isMounted]);
+  }, [files, activeFile, openFiles, isMounted]);
 
   const currentFile = files[activeFile];
+
+  const handleFileSelect = (path: string) => {
+    setActiveFile(path);
+    if (!openFiles.includes(path)) {
+      setOpenFiles(prev => [...prev, path]);
+    }
+  };
+
+  const handleFileClose = (path: string) => {
+    setOpenFiles(prev => {
+      const next = prev.filter(p => p !== path);
+      if (activeFile === path && next.length > 0) {
+        setActiveFile(next[next.length - 1]);
+      } else if (next.length === 0) {
+        setActiveFile("");
+      }
+      return next;
+    });
+  };
+
+  const handleFileCreate = (path: string) => {
+    setFiles(prev => ({
+      ...prev,
+      [path]: { path, content: "" }
+    }));
+    handleFileSelect(path);
+  };
 
   const updateActiveFileContent = (content: string) => {
     if (!currentFile) return;
@@ -96,7 +129,8 @@ export default function Home() {
           <FileExplorer 
             files={files} 
             activeFile={activeFile} 
-            onFileSelect={setActiveFile} 
+            onFileSelect={handleFileSelect} 
+            onFileCreate={handleFileCreate}
             highlightedPaths={pendingPaths}
           />
         </Panel>
@@ -109,14 +143,21 @@ export default function Home() {
         <Panel defaultSize={55} minSize={30}>
           <section className="flex-1 h-full flex flex-col relative bg-[#0d0d0d] border-r border-slate-800">
             <EditorHeader fileName={currentFile?.path || "Welcome"} charCount={currentFile?.content.length || 0} />
+            <TabBar 
+              openFiles={openFiles} 
+              activeFile={activeFile} 
+              onFileSelect={handleFileSelect} 
+              onFileClose={handleFileClose} 
+            />
             <div className="flex-1 overflow-hidden relative">
               {proposedContent !== null ? (
                 <DiffEditor 
                   originalContent={files[activeFile]?.content || ""} 
                   modifiedContent={proposedContent || ""} 
+                  fileName={activeFile}
                 />
               ) : currentFile ? (
-                <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} />
+                <CodeEditor value={currentFile.content} onChange={updateActiveFileContent} fileName={activeFile} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full space-y-8 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/5 via-transparent to-transparent">
                   <div className="relative">
@@ -130,14 +171,6 @@ export default function Home() {
                     <p className="text-sm text-slate-500 leading-relaxed">
                       Select a file from the explorer or ask the AI to generate a new component to get started.
                     </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 w-full max-w-[280px]">
-                     <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-800/50">
-                        <span className="text-[11px] text-slate-400 flex items-center gap-2">
-                          <Command size={12} /> Generate Changes
-                        </span>
-                        <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 uppercase">⌘ ↵</span>
-                     </div>
                   </div>
                 </div>
               )}

@@ -10,13 +10,15 @@ import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { javascript } from '@codemirror/lang-javascript';
 import { MergeView } from '@codemirror/merge';
+import { getLanguageExtension } from '@/lib/utils/languages';
 
 interface DiffEditorProps {
   originalContent: string;
   modifiedContent: string;
+  fileName?: string;
 }
 
-const commonExtensions = [
+const getCommonExtensions = (fileName: string) => [
   lineNumbers(),
   highlightActiveLineGutter(),
   highlightSpecialChars(),
@@ -33,7 +35,7 @@ const commonExtensions = [
   rectangularSelection(),
   crosshairCursor(),
   highlightSelectionMatches(),
-  javascript(),
+  getLanguageExtension(fileName),
   oneDark,
   keymap.of([
     ...closeBracketsKeymap,
@@ -45,7 +47,7 @@ const commonExtensions = [
   ])
 ];
 
-export function DiffEditor({ originalContent, modifiedContent }: DiffEditorProps) {
+export function DiffEditor({ originalContent, modifiedContent, fileName = "file.js" }: DiffEditorProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mergeViewRef = useRef<MergeView | null>(null);
 
@@ -55,11 +57,11 @@ export function DiffEditor({ originalContent, modifiedContent }: DiffEditorProps
     const mergeView = new MergeView({
       a: {
         doc: originalContent,
-        extensions: [...commonExtensions, EditorView.editable.of(false), EditorState.readOnly.of(true)],
+        extensions: [...getCommonExtensions(fileName), EditorView.editable.of(false), EditorState.readOnly.of(true)],
       },
       b: {
         doc: modifiedContent,
-        extensions: commonExtensions,
+        extensions: getCommonExtensions(fileName),
       },
       parent: containerRef.current,
       orientation: "horizontal"
@@ -70,7 +72,7 @@ export function DiffEditor({ originalContent, modifiedContent }: DiffEditorProps
     return () => {
       mergeView.destroy();
     };
-  }, [originalContent, modifiedContent]);
+  }, [originalContent, modifiedContent, fileName]);
 
   return (
     <div className="flex flex-col h-full bg-[#0d0d0d]">
