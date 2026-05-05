@@ -20,7 +20,7 @@ export interface MultiFileOrchestrationResult {
   };
 }
 
-export async function orchestrateVFS(files: VFSState, instruction: string): Promise<MultiFileOrchestrationResult> {
+export async function orchestrateVFS(files: VFSState, instruction: string, fileList?: string[]): Promise<MultiFileOrchestrationResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
@@ -31,6 +31,11 @@ export async function orchestrateVFS(files: VFSState, instruction: string): Prom
   const vfsSnapshot = Object.entries(files).map(([path, file]) => {
     return `File: ${path}\nContent:\n${file.content}\n---`;
   }).join('\n');
+
+  // If a fileList is provided (when using @mentions), inform the AI about other files
+  const projectContext = fileList && fileList.length > 0 
+    ? `Available files in project:\n${fileList.join('\n')}\n\nFiles provided for full context:\n${vfsSnapshot}`
+    : `Current Project State:\n${vfsSnapshot}`;
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -49,7 +54,7 @@ export async function orchestrateVFS(files: VFSState, instruction: string): Prom
         },
         {
           "role": "user",
-          "content": `Current Project State:\n${vfsSnapshot}\n\nUser Instruction: ${instruction}`
+          "content": `${projectContext}\n\nUser Instruction: ${instruction}`
         }
       ],
       "include_reasoning": true,

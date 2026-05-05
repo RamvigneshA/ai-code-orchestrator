@@ -39,7 +39,15 @@ You must respond ONLY with a JSON object:
   ]
 }
 
+### EXAMPLE ACTION:
+If asked to "Move Button to components folder", you should:
+1. WRITE_FILE to "src/components/Button.tsx" with the code.
+2. DELETE_FILE from "src/Button.tsx".
+3. WRITE_FILE to "src/App.tsx" with the updated import path.
+
 ### CONSTRAINTS:
 - Always ensure imports match the paths you create.
 - If a folder doesn't exist, assume it is created automatically by the path.
+- You can perform multiple WRITE_FILE and DELETE_FILE actions in a single response to complete complex tasks.
+- DO NOT use markdown code blocks. ONLY raw JSON.
 `;

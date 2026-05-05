@@ -4,14 +4,14 @@ import { orchestrateVFS } from '@/lib/ai/agent';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { files, instruction } = body;
+    const { files, instruction, fileList } = body;
 
     if (!files || !instruction) {
       return NextResponse.json({ error: "Missing files or instruction" }, { status: 400 });
     }
 
-    // 2. Call the orchestration service with full VFS
-    const result = await orchestrateVFS(files, instruction);
+    // 2. Call the orchestration service with full VFS or targeted context
+    const result = await orchestrateVFS(files, instruction, fileList);
 
     // 3. Return structured result
     return NextResponse.json(result);
