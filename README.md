@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌌 Polaris AI Orchestrator
 
-## Getting Started
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![WebContainers](https://img.shields.io/badge/WebContainers-API-indigo?style=for-the-badge)](https://webcontainers.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-blue?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-First, run the development server:
+**Polaris** is a next-generation, AI-native IDE that runs entirely in your browser. It combines the power of **WebContainers** with advanced **AI Orchestration** to provide a seamless, multi-file development experience without ever leaving the tab.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+![Polaris Hero Preview](./public/hero-preview.png)
+
+## ✨ Core Features
+
+| Feature | Description |
+| :--- | :--- |
+| **🤖 AI Orchestration** | Describe complex changes across multiple files and let the AI handle the heavy lifting. |
+| **🚀 In-Browser Runtime** | Execute Node.js, run servers, and preview your apps instantly using WebContainers. |
+| **🔍 Side-by-Side Diffs** | Review every AI suggestion with a pixel-perfect diff editor before applying changes. |
+| **📁 Virtual File System** | A robust, persistent workspace that stays in sync with your browser's local storage. |
+| **💻 Integrated Terminal** | A full-featured xterm.js terminal to interact with your containerized environment. |
+
+## 🛠️ Technical Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router, React 19)
+- **Runtime**: [WebContainer API](https://webcontainers.io/) for in-browser Node.js execution.
+- **Editor**: [CodeMirror 6](https://codemirror.net/) with custom themes and syntax highlighting.
+- **AI Engine**: [OpenRouter SDK](https://openrouter.ai/) for state-of-the-art model orchestration.
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) for a sleek, modern UI.
+- **UI Components**: [Lucide React](https://lucide.dev/) & [React Resizable Panels](https://github.com/bvaughn/react-resizable-panels).
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    User((User)) -->|Instructions| AIPanel[AI Orchestrator Panel]
+    AIPanel -->|Prompt| OpenRouter[OpenRouter API]
+    OpenRouter -->|Multi-file Actions| Orchestrator[Lead AI Orchestrator]
+    Orchestrator -->|Proposed Changes| DiffEditor[Side-by-Side Diff]
+    User -->|Apply| VFS[Virtual File System]
+    VFS -->|Sync| WebContainer[WebContainer Runtime]
+    WebContainer -->|Live Preview| BrowserPreview[Browser Preview]
+    VFS -->|Persistence| LocalStorage[LocalStorage]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 18+ 
+- An OpenRouter API Key (set in `.env`)
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/ai-code-orchestrator.git
+   cd ai-code-orchestrator
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Add your OPENROUTER_API_KEY to .env
+   ```
 
-## Deploy on Vercel
+4. Run the development server:
+   ```bash
+   pnpm dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. Open [http://localhost:3000](http://localhost:3000) and start building!
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+<p align="center">
+  Built with ❤️ by the Polaris Team
+</p>
