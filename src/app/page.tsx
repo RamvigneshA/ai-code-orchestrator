@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CodeEditor, AIPanel, SuggestionCard, EditorHeader, FileExplorer, DiffEditor, TabBar, Terminal as TerminalView, BrowserPreview } from "@/app/_components";
+import { CodeEditor, AIPanel, EditorHeader, FileExplorer, DiffEditor, TabBar, BrowserPreview } from "@/app/_components";
+import dynamic from "next/dynamic";
+
+const TerminalView = dynamic(() => import("@/app/_components/Terminal").then(mod => mod.Terminal), { 
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-[#0d0d0d] animate-pulse" />
+});
 import { useOrchestrator } from "@/app/_hooks/useOrchestrator";
 import { Terminal, Cpu, Sparkles, Command } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -176,8 +182,9 @@ export default function Home() {
     setInstruction,
     loading,
     orchestration,
-    error,
+    messages,
     runOrchestrator,
+    cancelOrchestration,
     applyChanges,
     discardChanges
   } = useOrchestrator(files, setFiles);
@@ -303,27 +310,24 @@ export default function Home() {
             <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/20">
               <div className="flex items-center gap-2">
                 <Sparkles size={14} className="text-indigo-400" />
-                <h1 className="text-[10px] font-bold tracking-widest uppercase text-slate-500">AI Panel</h1>
+                <h1 className="text-[10px] font-bold tracking-widest uppercase text-slate-500">AI Orchestrator</h1>
               </div>
               <div className={`h-2 w-2 rounded-full ${loading ? 'bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-slate-700'}`} />
             </div>
-            <div className="flex-1 p-4 overflow-y-auto space-y-6">
+            <div className="flex-1 overflow-hidden">
               <AIPanel 
                 instruction={instruction} 
                 setInstruction={setInstruction} 
                 loading={loading} 
                 runOrchestrator={runOrchestrator} 
                 files={files}
-              />
-              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-[11px] text-red-400">
-                  {error}
-                </div>
-              )}
-              <SuggestionCard 
-                orchestration={orchestration} 
-                applyChanges={applyChanges} 
-                discardChanges={discardChanges} 
+                messages={messages}
+                applyChanges={applyChanges}
+                discardChanges={discardChanges}
+                orchestration={orchestration}
+                cancelOrchestration={cancelOrchestration}
+                activeFile={activeFile}
+                onApplySnippet={updateActiveFileContent}
               />
             </div>
           </aside>
