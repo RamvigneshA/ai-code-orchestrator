@@ -16,9 +16,9 @@ export function Terminal() {
     const term = new XTerm({
       cursorBlink: true,
       theme: {
-        background: '#0d0d0d', // Match th̦e IDE's background
+        background: '#0d0d0d', // Match the IDE's background
         foreground: '#ffffff',
-      },̦
+      },
       fontSize: 13,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
     });
