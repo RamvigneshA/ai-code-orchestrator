@@ -20,7 +20,12 @@ export interface MultiFileOrchestrationResult {
   };
 }
 
-export async function orchestrateVFS(files: VFSState, instruction: string, fileList?: string[]): Promise<MultiFileOrchestrationResult> {
+export async function orchestrateVFS(
+  files: VFSState, 
+  instruction: string, 
+  fileList?: string[], 
+  history: { role: string, content: string }[] = []
+): Promise<MultiFileOrchestrationResult> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
@@ -37,6 +42,12 @@ export async function orchestrateVFS(files: VFSState, instruction: string, fileL
     ? `Available files in project:\n${fileList.join('\n')}\n\nFiles provided for full context:\n${vfsSnapshot}`
     : `Current Project State:\n${vfsSnapshot}`;
 
+  // Limit history to last 10 turns to save tokens and prevent context overflow
+  const formattedHistory = history
+    .filter(h => h.role === 'user' || h.role === 'assistant')
+    .slice(-10)
+    .map(h => ({ role: h.role, content: h.content }));
+
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -47,11 +58,12 @@ export async function orchestrateVFS(files: VFSState, instruction: string, fileL
     },
     body: JSON.stringify({
       "model": "openai/gpt-oss-120b:free",
-      "messages": [
+      "messages": [ 
         {
           "role": "system",
           "content": FILE_ORCHESTRATOR_PROMPT
         },
+        ...formattedHistory,
         {
           "role": "user",
           "content": `${projectContext}\n\nUser Instruction: ${instruction}`
@@ -74,12 +86,35 @@ export async function orchestrateVFS(files: VFSState, instruction: string, fileL
     throw new Error('No response from AI model');
   }
 
+  const content = choice.message.content.trim();
   let parsed;
+  
   try {
-    parsed = JSON.parse(choice.message.content);
+    // Attempt standard parse first
+    parsed = JSON.parse(content);
   } catch (e) {
-    console.error('Failed to parse AI response:', choice.message.content);
-    throw new Error('AI returned invalid JSON');
+    // Try to clean markdown wrappers and retry
+    try {
+      const cleaned = content
+        .replace(/^```json\s*/, '')
+        .replace(/^```\s*/, '')
+        .replace(/\s*```$/, '');
+      parsed = JSON.parse(cleaned);
+    } catch (innerError) {
+      console.error('Failed to parse AI response:', content);
+      
+      // One last desperate attempt: if it looks like it was cut off
+      if (content.startsWith('{') && !content.endsWith('}')) {
+        try {
+          const repaired = content + '"]}'; // Try to close potential actions array
+          parsed = JSON.parse(repaired);
+        } catch (finalError) {
+          throw new Error('AI returned invalid JSON');
+        }
+      } else {
+        throw new Error('AI returned invalid JSON');
+      }
+    }
   }
 
   return {
