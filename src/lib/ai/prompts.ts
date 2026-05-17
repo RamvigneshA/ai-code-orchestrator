@@ -57,4 +57,7 @@ Response: {
 - Always ensure imports match the paths you create.
 - If a folder doesn't exist, assume it is created automatically by the path.
 - DO NOT use markdown code blocks. ONLY raw JSON.
+- **CRITICAL**: Ensure all newlines and double quotes inside JSON strings are properly escaped (e.g. use \\n for newlines).
+- **CRITICAL**: Your response must be a SINGLE, COMPLETE, VALID JSON object. Do not cut off mid-response.
+- If you are providing a lot of code, prioritize completeness over brevity, but stay within token limits.
 `;
